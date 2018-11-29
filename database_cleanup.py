@@ -19,6 +19,12 @@ DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
 # IDEA: Need to clean up the existing rows before insert the initial db rows
+# only truncate the table
+meta = db.metadata
+for table in reversed(meta.sorted_tables):
+    print('Clear table %s' % table)
+    session.execute(table.delete())
+session.commit()
 
 # Create dummy user
 ADMIN = User(name="appuser", email="appuser@studio.com", picture='https://pbs.twimg.com/profile_images/2671170543/18debd694829ed78203a5a36dd364160_400x400.png')
@@ -44,6 +50,48 @@ camera_x_t2 = Camera(user_id=1,
                       price="$1,499",
                       company_id=1)
 session.add(camera_x_t2)
+session.commit()
+
+# Camera for Sony
+company_sony = Company(user_id=1, name="Sony")
+session.add(company_sony)
+session.commit()
+
+camera_s_2 = Camera(user_id=1,
+                      name="s2",
+                      description="a6900 description",
+                      price="$1,699",
+                      company_id=2)
+session.add(camera_s_2)
+session.commit()
+
+camera_s_1 = Camera(user_id=1,
+                      name="s1",
+                      description="a7200 description",
+                      price="$1,899",
+                      company_id=2)
+session.add(camera_s_1)
+session.commit()
+
+# Camera for Sony
+company_canon = Company(user_id=1, name="Canon")
+session.add(company_canon)
+session.commit()
+
+camera_a_6900 = Camera(user_id=1,
+                      name="a6900",
+                      description="a6900 description",
+                      price="$1,699",
+                      company_id=3)
+session.add(camera_a_6900)
+session.commit()
+
+camera_a_7200 = Camera(user_id=1,
+                      name="a7200",
+                      description="a7200 description",
+                      price="$1,899",
+                      company_id=3)
+session.add(camera_a_7200)
 session.commit()
 
 print("successfully added all camera items!!")
