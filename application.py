@@ -226,9 +226,59 @@ def showCompany():
         return render_template('publicCompany.html', companies = companies)
     return render_template('restaurants.html', restaurants = restaurants)
 
-# TODO: add routing info
+# Create a new Company
+@app.route('/company/new', methods=['GET','POST'])
+def createCompany():
+    if 'username' not in login_session:
+        return redirect('/login')
 
-# ^^^^^^^^^^^^^^^^^^^^ Routing ^^^^^^^^^^^^^^^^^^^^
+    if request.method == 'POST':
+        newCompany = Company(name=request.form['name'], user_id=login_session['user_id'])
+        session.add(newCompany)
+        flash('Company "%s" successfully created' % newCompany.name)
+        session.commit()
+        return redirect(url_for('showCompany'))
+    else:
+        return render_template('createCompany.html')
+
+# Edit a Company
+@app.route('/company/<int:company_id>/edit', methods=['GET','POST'])
+def editCompany(company_id):
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    editedCompany = session.query(Company).filter_by(id=company_id).one()
+    if login_session['user_id'] != editedCompany.user_id:
+        return "<script>function myAlert() { alert('You are not authorized to edit this restaurant.'); }</script><body onload='myAlert()'>"
+    if request.method == 'POST':
+        if request.form['name']:
+            editedCompany.name = request.form['name']
+            flash('Company "%s" successfully edited' % editedCompany.name)
+            return redirect_url(url_for('showCompany'))
+    else:
+        return render_template('editCompany.html', company = editedCompany)
+
+@app.route('/company/<int:company_id>/delete', methods=['GET','POST'])
+def deleteCompany(company_id):
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    companyToDelete = session.query(Company).filter_by(id=company_id).one()
+    if login_session['user_id'] != companyToDelete.user_id:
+        return "<script>function myAlert() { alert('You are not authorized to edit this restaurant.'); }</script><body onload='myAlert()'>"
+    if request.method == 'POST':
+        session.delete(companyToDelete)
+        flash('Company "%s" successfully deleted' % companyToDelete.name)
+        session.commit()
+        return redirect(url_for('showCompany', company_id = company_id))
+    else:
+        return render_template('deleteCompany.html', company = companyToDelete)
+
+# ^^^^^^^^^^^^^^^^^^^^ Company Routing ^^^^^^^^^^^^^^^^^^^^
+
+# TODO: Creating Camera routing info and make comment
+
+# ^^^^^^^^^^^^^^^^^^^^ Camera Routing ^^^^^^^^^^^^^^^^^^^^
 
 if __name__ == '__main__':
     app.secret_key = 'super_secret_key'
