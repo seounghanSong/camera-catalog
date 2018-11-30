@@ -217,6 +217,7 @@ def cameraJson():
 
 # ^^^^^^^^^^^^^^^^^^^^ API ^^^^^^^^^^^^^^^^^^^^
 
+# Show all Companies
 @app.route('/')
 @app.route('/index')
 @app.route('/company')
@@ -224,7 +225,7 @@ def showCompany():
     companies = session.query(Company).order_by(asc(Company.name))
     if 'username' not in login_session:
         return render_template('publicCompany.html', companies = companies)
-    return render_template('restaurants.html', restaurants = restaurants)
+    return render_template('companies.html', companies = companies)
 
 # Create a new Company
 @app.route('/company/new', methods=['GET','POST'])
@@ -249,7 +250,7 @@ def editCompany(company_id):
 
     editedCompany = session.query(Company).filter_by(id=company_id).one()
     if login_session['user_id'] != editedCompany.user_id:
-        return "<script>function myAlert() { alert('You are not authorized to edit this restaurant.'); }</script><body onload='myAlert()'>"
+        return "<script>function myAlert() { alert('You are not authorized to edit this company.'); }</script><body onload='myAlert()'>"
     if request.method == 'POST':
         if request.form['name']:
             editedCompany.name = request.form['name']
@@ -258,6 +259,7 @@ def editCompany(company_id):
     else:
         return render_template('editCompany.html', company = editedCompany)
 
+# Delete a Company
 @app.route('/company/<int:company_id>/delete', methods=['GET','POST'])
 def deleteCompany(company_id):
     if 'username' not in login_session:
@@ -265,7 +267,7 @@ def deleteCompany(company_id):
 
     companyToDelete = session.query(Company).filter_by(id=company_id).one()
     if login_session['user_id'] != companyToDelete.user_id:
-        return "<script>function myAlert() { alert('You are not authorized to edit this restaurant.'); }</script><body onload='myAlert()'>"
+        return "<script>function myAlert() { alert('You are not authorized to edit this company.'); }</script><body onload='myAlert()'>"
     if request.method == 'POST':
         session.delete(companyToDelete)
         flash('Company "%s" successfully deleted' % companyToDelete.name)
@@ -277,6 +279,79 @@ def deleteCompany(company_id):
 # ^^^^^^^^^^^^^^^^^^^^ Company Routing ^^^^^^^^^^^^^^^^^^^^
 
 # TODO: Creating Camera routing info and make comment
+
+# Show all Cameras
+@app.route('/company/<int:company_id>')
+@app.route('/company/<int:company_id>/camera')
+def showCamera(company_id):
+    company = session.query(Company).filter_by(id=company_id).one()
+    cameras = session.query(Camera).filter_by(company_id=company_id).all()
+    creator = getUserInfo(company.user_id)
+    # Only show the non-public version if the user is logged-in and its creator
+    if 'username' not in login_session or login_session['user_id'] != creator.id:
+        return render_template('publicCamera.html', cameras=cameras, company=company, creator=creator)
+    return render_template('cameras.html', cameras=cameras, company=company, creator=creator)
+
+# Create a new camera
+@app.route('/company/<int:company_id>/camera/new', methods=['GET','POST'])
+def newCamera(company_id):
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    company = session.query(Company).filter_by(id=company_id).one()
+    if login_session['user_id'] != company.user_id:
+        return "<script>function myAlert() { alert('You are not authorized to add an item to this camera.'); }</script><body onload='myAlert()'>"
+    if request.method == 'POST':
+        newCamera = Camera(name=request.form['name'], description=request.form['description'], price=request.form['price'], company_id=company_id, user_id=company.user_id)
+        user_id = login_session['user_id']
+        session.commit()
+        flash('Company "%s" successfully created' % (newCamera.name))
+        return redirect(url_for('showCamera', company_id = company_id))
+    else:
+        return render_template('newCamera.html', company_id=company_id)
+
+# Edit a company
+@app.route('/company/<int:company_id>/camera/<int:camera_id>/edit', methods=['GET','POST'])
+def editCamera(company_id, camera_id):
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    editedCamera = session.query(Camera).filter_by(id=camera_id).one()
+    company = session.query(Company).filter_by(id=company_id).one()
+    if login_session['user_id'] != editedCamera.user_id:
+        return "<script>function myAlert() { alert('You are not authorized to add an item to this camera.'); }</script><body onload='myAlert()'>"
+    if request.method == 'POST':
+        if request.form['name']:
+            editedCamera.name = request.form['name']
+        if request.form['description']:
+            editedCamera.description = request.form['description']
+        if request.form['price']:
+            editedCamera.price = request.form['price']
+        session.add(editedCamera)
+        session.commit()
+        flash('Company "%s" successfully edited' % editedCamera.name)
+        return redirect(url_for('showCamera', company_id=company_id))
+    else:
+        return render_template('editCamera.html', company_id=company_id, camera_id=camera_id, editedCamera = editedCamera)
+
+# Delete a camera
+@app.route('/company/<int:compant_id>/camera/<int:camera_id>/delete', methods=['GET','POST'])
+def deleteCamera(company_id, camera_id):
+    if 'username' not in login_session:
+        return redirect('/login')
+
+    company = session.query(Company).filter_by(id=company_id).one()
+    itemToDelete = session.query(Camera).filter_by(id=camera_id).one()
+    if login_session['user_id'] != itemToDelete.user_id:
+        return "<script>function myAlert() { alert('You are not authorized to delete this camera.'); }</script><body onload='myAlert()'>"
+    if request.method == 'POST':
+        session.delete(itemToDelete)
+        session.commit()
+        flash('Camera Item "%s" successfully deleted' % itemToDelete.name)
+        return redirect(url_for('showCamera', company_id=company_id))
+    else:
+        return render_template('deleteCamera.html', item=itemToDelete)
+
 
 # ^^^^^^^^^^^^^^^^^^^^ Camera Routing ^^^^^^^^^^^^^^^^^^^^
 
