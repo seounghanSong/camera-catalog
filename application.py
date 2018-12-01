@@ -173,7 +173,7 @@ def logout():
 
         # Send a notification message
         flash('Current user logged out.')
-        return redirect(url_for('#'))
+        return redirect(url_for('showCompany'))
         # return redirect(url_for('showCompany'))
     else:
         print("In logout, failed to revoke token for user '%s' response was '%s'" % (stored_username, result['status']))
