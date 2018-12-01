@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, jsonify, url_for
 from flask import flash
 
 from sqlalchemy import create_engine, asc
-from sqlalchemy import sessionmaker
+from sqlalchemy.orm import sessionmaker
 from database_setup import Base, User, Company, Camera
 
 from flask import session as login_session
@@ -18,9 +18,10 @@ import requests
 app = Flask(__name__)
 
 CLIENT_ID = json.loads(open("client_secret.json", "r").read())["web"]["client_id"]
+print(CLIENT_ID)
 
 # Connect to database and create database session
-engine = create_engine('sqlite:///camerastudio.db')
+engine = create_engine('sqlite:///camerastudio.db?check_same_thread=False')
 Base.metadata.bind = engine
 
 DBSession = sessionmaker(bind=engine)
@@ -32,7 +33,7 @@ session = DBSession()
 def showLogin():
     # Create a random 32 character string with a mix of uppercase letter and digits
     state = ''.join(random.choice(string.ascii_uppercase + string.digits) for x
-        in xrange(32))
+        in range(32))
     login_session['state'] = state
     # return "The current session state is %s" %login_session['state']
 
@@ -50,7 +51,7 @@ def gConnect():
     code = request.data
     try:
         # Upgrade the auth code into a credentials object
-        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
+        oauth_flow = flow_from_clientsecrets('client_secret.json', scope='')
         oauth_flow.redirect_uri = 'postmessage'
         credentials = oauth_flow.step2_exchange(code)
     except FlowExchangeError:
@@ -140,7 +141,7 @@ def createUser(login_session):
 @app.route('/logout')
 def logout():
     if 'username' not in login_session:
-        return redirect(url_for('#'))
+        return redirect(url_for('showCompany'))
         # return redirect(url_for('showCompany'))
 
     stored_username = login_session.get('username')
@@ -161,25 +162,25 @@ def logout():
         print("In logout, user '%s' successfully logged out" % stored_username)
         # Reset the user's session
         del login_session['access_token']
-       del login_session['gplus_id']
-       del login_session['username']
-       del login_session['picture']
-       del login_session['email']
-       del login_session['user_id']
-       # response = make_response(json.dumps('Current user logged out.'), 200)
-       # response.headers['Content-Type'] = 'application/json'
-       # return response
+        del login_session['gplus_id']
+        del login_session['username']
+        del login_session['picture']
+        del login_session['email']
+        del login_session['user_id']
+        # response = make_response(json.dumps('Current user logged out.'), 200)
+        # response.headers['Content-Type'] = 'application/json'
+        # return response
 
-       # Send a notification message
-       flash('Current user logged out.')
-       return redirect(url_for('#'))
-       # return redirect(url_for('showCompany'))
-   else:
-       print("In logout, failed to revoke token for user '%s' response was '%s'" % (stored_username, result['status']))
-       # Send a failure message
-       response = make_response(json.dumps('Failed to revoke token for current use.'), 400)
-       response.headers['Content-Type'] = 'application/json'
-       return response
+        # Send a notification message
+        flash('Current user logged out.')
+        return redirect(url_for('#'))
+        # return redirect(url_for('showCompany'))
+    else:
+        print("In logout, failed to revoke token for user '%s' response was '%s'" % (stored_username, result['status']))
+        # Send a failure message
+        response = make_response(json.dumps('Failed to revoke token for current use.'), 400)
+        response.headers['Content-Type'] = 'application/json'
+        return response
 
 # ^^^^^^^^^^^^^^^^^^^^ Auth ^^^^^^^^^^^^^^^^^^^^
 
@@ -189,30 +190,30 @@ def logout():
 @app.route('/company/JSON')
 def companiesJson():
     companies = session.query(Company).all()
-    return jsonify(companies = [r.serialize for r in companies])
+    return jsonify(company = [r.serialize for r in companies])
 
 # return one specific company information
 @app.route('/company/<int:company_id>/JSON')
-def companyJson():
-    company = session.query(Company).filter_by(id = company_id).one()
+def companyJson(company_id):
+    company = session.query(Company).filter_by(id = company_id).all()
     return jsonify(company = [r.serialize for r in company])
 
 # return all camera information which belong to one company
 @app.route('/company/<int:company_id>/camera/JSON')
-def companyCameraJson():
+def companyCameraJson(company_id):
     cameras = session.query(Camera).filter_by(company_id = company_id).all()
-    return jsonify(company = [r.serialize for r in company])
+    return jsonify(camera = [r.serialize for r in cameras])
 
 # return all camera information regardless what company they belonged to
 @app.route('/camera/JSON')
 def camerasJson():
     cameras = session.query(Camera).all()
-    return jsonify(cameras = [r.serialize for r in cameras])
+    return jsonify(camera = [r.serialize for r in cameras])
 
 # return one specific camera information
 @app.route('/camera/<int:camera_id>/JSON')
-def cameraJson():
-    camera = session.query(Camera).filter_by(id = camera_id).one()
+def cameraJson(camera_id):
+    camera = session.query(Camera).filter_by(id = camera_id).all()
     return jsonify(camera = [r.serialize for r in camera])
 
 # ^^^^^^^^^^^^^^^^^^^^ API ^^^^^^^^^^^^^^^^^^^^
@@ -255,7 +256,7 @@ def editCompany(company_id):
         if request.form['name']:
             editedCompany.name = request.form['name']
             flash('Company "%s" successfully edited' % editedCompany.name)
-            return redirect_url(url_for('showCompany'))
+            return redirect(url_for('showCompany'))
     else:
         return render_template('editCompany.html', company = editedCompany)
 
