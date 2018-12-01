@@ -289,12 +289,12 @@ def showCamera(company_id):
     creator = getUserInfo(company.user_id)
     # Only show the non-public version if the user is logged-in and its creator
     if 'username' not in login_session or login_session['user_id'] != creator.id:
-        return render_template('publicCamera.html', cameras=cameras, company=company, creator=creator)
-    return render_template('cameras.html', cameras=cameras, company=company, creator=creator)
+        return render_template('publicCamera.html', items=cameras, company=company, creator=creator)
+    return render_template('cameras.html', items=cameras, company=company, creator=creator)
 
 # Create a new camera
 @app.route('/company/<int:company_id>/camera/new', methods=['GET','POST'])
-def newCamera(company_id):
+def createCamera(company_id):
     if 'username' not in login_session:
         return redirect('/login')
 
@@ -308,7 +308,7 @@ def newCamera(company_id):
         flash('Company "%s" successfully created' % (newCamera.name))
         return redirect(url_for('showCamera', company_id = company_id))
     else:
-        return render_template('newCamera.html', company_id=company_id)
+        return render_template('createCamera.html', company_id=company_id)
 
 # Edit a company
 @app.route('/company/<int:company_id>/camera/<int:camera_id>/edit', methods=['GET','POST'])

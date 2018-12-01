@@ -6,7 +6,7 @@
     <script src="//apis.google.com/js/platform.js?onload=start">
     </script>
 </head>
-<body>  
+<body>
     <!-- GOOGLE PLUS SIGN IN BUTTON-->
     <div id="signInButton">
          <span class="g-signin"
@@ -40,7 +40,7 @@
                             $("#result").html("Login Successful!</br>" + result +
                                               "</br>Redirecting ...");
                             setTimeout(function() {
-                                window.location.href = "/restaurant";
+                                window.location.href = "/company";
                             }, 4000); // Redirect after 4 seconds
                         } else if (authResult["error"]) {
                             console.log("There was an error: " + authResult["error"]);
